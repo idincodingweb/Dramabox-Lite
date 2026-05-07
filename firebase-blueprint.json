@@ -1,0 +1,156 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile with balance and status",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "coins": { "type": "number" },
+        "isVip": { "type": "boolean" },
+        "deviceId": { "type": "string" },
+        "isSuspended": { "type": "boolean" },
+        "settings": {
+          "type": "object",
+          "properties": {
+            "language": { "type": "string" },
+            "autoplay": { "type": "boolean" },
+            "cellularPlay": { "type": "boolean" },
+            "quality": { "type": "string" },
+            "notifNewReleases": { "type": "boolean" },
+            "notifNewsletters": { "type": "boolean" },
+            "notifSpecialOffers": { "type": "boolean" }
+          }
+        },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["email", "createdAt"]
+    },
+    "WatchHistory": {
+      "title": "Watch History",
+      "description": "User's watch history for a drama",
+      "type": "object",
+      "properties": {
+        "dramaId": { "type": "string" },
+        "title": { "type": "string" },
+        "cover": { "type": "string" },
+        "lastWatchedChapterId": { "type": "string" },
+        "lastWatchedChapterName": { "type": "string" },
+        "videoTime": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["dramaId", "updatedAt"]
+    },
+    "Favorite": {
+      "title": "Favorite Drama",
+      "description": "User's favorite drama",
+      "type": "object",
+      "properties": {
+        "dramaId": { "type": "string" },
+        "title": { "type": "string" },
+        "cover": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["dramaId", "createdAt"]
+    },
+    "Withdrawal": {
+      "title": "Withdrawal",
+      "description": "User's coin withdrawal request",
+      "type": "object",
+      "properties": {
+        "amountCoins": { "type": "number" },
+        "amountIdr": { "type": "number" },
+        "method": { "type": "string" },
+        "accountNumber": { "type": "string" },
+        "status": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["amountCoins", "amountIdr", "method", "accountNumber", "status", "createdAt"]
+    },
+    "Comment": {
+      "title": "Episode Comment",
+      "description": "User comment for a specific drama episode",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userDisplayName": { "type": "string" },
+        "userPhotoURL": { "type": "string" },
+        "text": { "type": "string" },
+        "likesCount": { "type": "number" },
+        "dramaId": { "type": "string" },
+        "chapterId": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["userId", "text", "dramaId", "chapterId", "createdAt"]
+    },
+    "CommentLike": {
+      "title": "Comment Like",
+      "description": "Tracks users who liked a comment",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "createdAt": { "type": "number" }
+      },
+      "required": ["userId", "createdAt"]
+    },
+    "DramaStats": {
+      "title": "Drama Stats",
+      "description": "View, like, share, and comment counts for a drama",
+      "type": "object",
+      "properties": {
+        "views": { "type": "number" },
+        "likes": { "type": "number" },
+        "comments": { "type": "number" },
+        "shares": { "type": "number" }
+      }
+    },
+    "DailyWatchTime": {
+      "title": "Daily Watch Time",
+      "description": "User's watch time status for a specific day",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string" },
+        "watchTimeMinutes": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["date", "watchTimeMinutes", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "users/{userId}/history/{dramaId}": {
+      "schema": "WatchHistory",
+      "description": "User watch history"
+    },
+    "users/{userId}/daily_stats/{date}": {
+      "schema": "DailyWatchTime",
+      "description": "Daily watch time tracking"
+    },
+    "users/{userId}/favorites/{dramaId}": {
+      "schema": "Favorite",
+      "description": "User favorite dramas"
+    },
+    "users/{userId}/withdrawals/{withdrawalId}": {
+      "schema": "Withdrawal",
+      "description": "User coin withdrawal requests directly inside user subcollection"
+    },
+    "comments/{commentId}": {
+      "schema": "Comment",
+      "description": "Comments left on episodes"
+    },
+    "comments/{commentId}/likes/{userId}": {
+      "schema": "CommentLike",
+      "description": "Likes left on comments"
+    },
+    "drama_stats/{dramaId}": {
+      "schema": "DramaStats",
+      "description": "Like, share, and comment counts for a drama"
+    }
+  }
+}

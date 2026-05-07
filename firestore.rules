@@ -1,0 +1,154 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    function isValidUser(data) {
+      return (data.get('email', null) == null || data.get('email', null) is string) &&
+             (data.get('displayName', null) == null || (data.get('displayName', null) is string && data.get('displayName', null).size() <= 128)) &&
+             (data.get('photoURL', null) == null || (data.get('photoURL', null) is string && data.get('photoURL', null).size() <= 1024)) &&
+             (data.get('coins', null) == null || data.get('coins', null) is number) &&
+             (data.get('isVip', null) == null || data.get('isVip', null) is bool) &&
+             (data.get('lastCheckIn', null) == null || data.get('lastCheckIn', null) is timestamp) &&
+             (data.get('checkInStreak', null) == null || data.get('checkInStreak', null) is number) &&
+             (data.get('referralCode', null) == null || (data.get('referralCode', null) is string && data.get('referralCode', null).size() <= 64)) &&
+             (data.get('referredBy', null) == null || (data.get('referredBy', null) is string && data.get('referredBy', null).size() <= 128)) &&
+             (data.get('referralCount', null) == null || data.get('referralCount', null) is number) &&
+             (data.get('deviceId', null) == null || (data.get('deviceId', null) is string && data.get('deviceId', null).size() <= 128)) &&
+             (data.get('isSuspended', null) == null || data.get('isSuspended', null) is bool) &&
+             (data.get('settings', null) == null || data.get('settings', null) is map) &&
+             (data.get('createdAt', null) == null || data.get('createdAt', null) is timestamp) &&
+             (data.get('updatedAt', null) == null || data.get('updatedAt', null) is timestamp);
+    }
+
+    function isValidWatchHistory(data) {
+      return data.get('dramaId', null) is string && data.get('dramaId', null).size() <= 128 &&
+             (data.get('title', null) == null || (data.get('title', null) is string && data.get('title', null).size() <= 256)) &&
+             (data.get('cover', null) == null || (data.get('cover', null) is string && data.get('cover', null).size() <= 1024)) &&
+             (data.get('lastWatchedChapterId', null) == null || (data.get('lastWatchedChapterId', null) is string && data.get('lastWatchedChapterId', null).size() <= 128)) &&
+             (data.get('lastWatchedChapterName', null) == null || (data.get('lastWatchedChapterName', null) is string && data.get('lastWatchedChapterName', null).size() <= 256)) &&
+             (data.get('videoTime', null) == null || data.get('videoTime', null) is number) &&
+             data.get('updatedAt', null) is timestamp;
+    }
+
+    function isValidFavorite(data) {
+      return data.get('dramaId', null) is string && data.get('dramaId', null).size() <= 128 &&
+             (data.get('title', null) == null || (data.get('title', null) is string && data.get('title', null).size() <= 256)) &&
+             (data.get('cover', null) == null || (data.get('cover', null) is string && data.get('cover', null).size() <= 1024)) &&
+             data.get('createdAt', null) is timestamp;
+    }
+
+    function isValidWithdrawal(data) {
+      return data.get('amountCoins', null) is number &&
+             data.get('amountIdr', null) is number &&
+             data.get('method', null) is string && data.get('method', null).size() <= 64 &&
+             data.get('accountNumber', null) is string && data.get('accountNumber', null).size() <= 128 &&
+             data.get('status', null) is string && data.get('status', null).size() <= 64 &&
+             data.get('createdAt', null) is timestamp;
+    }
+
+    function isValidComment(data) {
+      return data.get('userId', null) is string && data.get('userId', null).size() <= 128 &&
+             (data.get('userDisplayName', null) == null || (data.get('userDisplayName', null) is string && data.get('userDisplayName', null).size() <= 128)) &&
+             (data.get('userPhotoURL', null) == null || (data.get('userPhotoURL', null) is string && data.get('userPhotoURL', null).size() <= 512)) &&
+             data.get('text', null) is string && data.get('text', null).size() > 0 && data.get('text', null).size() <= 500 &&
+             (data.get('likesCount', null) == null || data.get('likesCount', null) is number) &&
+             data.get('dramaId', null) is string && data.get('dramaId', null).size() <= 128 &&
+             data.get('chapterId', null) is string && data.get('chapterId', null).size() <= 128 &&
+             data.get('createdAt', null) is timestamp;
+    }
+
+    function isValidCommentLike(data) {
+      return data.get('userId', null) is string && data.get('userId', null).size() <= 128 &&
+             data.get('createdAt', null) is timestamp;
+    }
+
+    function isValidDramaStats(data) {
+      return (data.get('views', null) == null || data.get('views', null) is number) &&
+             (data.get('likes', null) == null || data.get('likes', null) is number) &&
+             (data.get('comments', null) == null || data.get('comments', null) is number) &&
+             (data.get('shares', null) == null || data.get('shares', null) is number);
+    }
+
+    function isValidDailyWatchTime(data) {
+      return data.get('date', null) is string &&
+             data.get('watchTimeMinutes', null) is number &&
+             data.get('updatedAt', null) is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isOwner(userId) && isValidUser(incoming()) && incoming().get('createdAt', request.time) == request.time;
+      allow update: if isSignedIn() && isValidUser(incoming()) && (
+                      (isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'photoURL', 'coins', 'lastCheckIn', 'checkInStreak', 'updatedAt', 'isVip', 'referralCode', 'referredBy', 'referralCount', 'deviceId', 'isSuspended', 'settings'])) ||
+                      (!isOwner(userId) && incoming().diff(existing()).affectedKeys().hasOnly(['referralCount', 'coins', 'updatedAt', 'isSuspended']))
+                    );
+    }
+
+    match /users/{userId}/history/{dramaId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidWatchHistory(incoming()) && incoming().updatedAt == request.time;
+      allow update: if isOwner(userId) && isValidWatchHistory(incoming()) && incoming().updatedAt == request.time &&
+                      incoming().diff(existing()).affectedKeys().hasOnly(['title', 'cover', 'lastWatchedChapterId', 'lastWatchedChapterName', 'updatedAt', 'dramaId', 'videoTime']);
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/favorites/{dramaId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidFavorite(incoming()) && incoming().createdAt == request.time;
+      allow delete: if isOwner(userId);
+    }
+
+    match /users/{userId}/daily_stats/{date} {
+      allow get, list: if isOwner(userId);
+      allow create, update: if isOwner(userId) && isValidDailyWatchTime(incoming()) && incoming().updatedAt == request.time;
+    }
+
+    match /users/{userId}/withdrawals/{withdrawalId} {
+      allow get, list: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidWithdrawal(incoming()) && incoming().createdAt == request.time;
+    }
+
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isValidComment(incoming()) && incoming().userId == request.auth.uid && incoming().createdAt == request.time;
+      allow update: if isSignedIn() && isValidComment(incoming()) && (
+                      (incoming().userId == request.auth.uid && incoming().diff(existing()).affectedKeys().hasOnly(['text'])) ||
+                      (incoming().diff(existing()).affectedKeys().hasOnly(['likesCount']))
+                    );
+      allow delete: if isSignedIn() && existing().userId == request.auth.uid;
+    }
+
+    match /comments/{commentId}/likes/{userId} {
+      allow read: if true;
+      allow create: if isOwner(userId) && isValidCommentLike(incoming()) && incoming().createdAt == request.time;
+      allow delete: if isOwner(userId);
+    }
+
+    match /drama_stats/{dramaId} {
+      allow read: if true;
+      allow create: if isSignedIn() && isValidDramaStats(incoming());
+      allow update: if isSignedIn() && isValidDramaStats(incoming()) && incoming().diff(existing()).affectedKeys().hasOnly(['views', 'likes', 'comments', 'shares']);
+    }
+  }
+}

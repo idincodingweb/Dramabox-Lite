@@ -1,0 +1,6 @@
+{
+  "name": "Dramabox Lite",
+  "description": "Modular web clone of DramaBox using React, Tailwind and shadcn/ui.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
